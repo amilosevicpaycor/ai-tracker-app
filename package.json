@@ -1,0 +1,21 @@
+{
+  "name": "sample-tracker-app",
+  "version": "1.0.0",
+  "description": "A simple task tracker application built with Node.js and Express",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node --watch app.js"
+  },
+  "keywords": [
+    "task",
+    "tracker",
+    "express",
+    "nodejs"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

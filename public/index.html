@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sample Tracker App</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background-color: #f5f5f5;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+    }
+
+    .add-task-form {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+
+    .add-task-form input {
+      flex: 1;
+      padding: 12px 16px;
+      font-size: 16px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .add-task-form input:focus {
+      border-color: #007bff;
+    }
+
+    .add-task-form button {
+      padding: 12px 24px;
+      font-size: 16px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .add-task-form button:hover {
+      background-color: #0056b3;
+    }
+
+    .task-list {
+      list-style: none;
+    }
+
+    .task-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px;
+      background-color: white;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .task-item .task-title {
+      flex: 1;
+      font-size: 16px;
+      color: #333;
+    }
+
+    .task-item .delete-btn {
+      padding: 8px 16px;
+      font-size: 14px;
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .task-item .delete-btn:hover {
+      background-color: #c82333;
+    }
+
+    .empty-message {
+      text-align: center;
+      color: #666;
+      padding: 40px;
+      background-color: white;
+      border-radius: 8px;
+    }
+
+    .error-message {
+      color: #dc3545;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Sample Tracker App</h1>
+    
+    <form class="add-task-form" id="addTaskForm">
+      <input type="text" id="taskInput" placeholder="Enter a new task..." required>
+      <button type="submit">Add Task</button>
+    </form>
+
+    <div id="errorMessage" class="error-message" style="display: none;"></div>
+
+    <ul class="task-list" id="taskList">
+      <li class="empty-message">Loading tasks...</li>
+    </ul>
+  </div>
+
+  <script>
+    const taskInput = document.getElementById('taskInput');
+    const taskList = document.getElementById('taskList');
+    const addTaskForm = document.getElementById('addTaskForm');
+    const errorMessage = document.getElementById('errorMessage');
+
+    // Load tasks on page load
+    document.addEventListener('DOMContentLoaded', loadTasks);
+
+    // Add task form submission
+    addTaskForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const title = taskInput.value.trim();
+      
+      if (!title) return;
+
+      try {
+        const response = await fetch('/api/tasks', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ title })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to add task');
+        }
+
+        taskInput.value = '';
+        hideError();
+        await loadTasks();
+      } catch (error) {
+        showError(error.message);
+      }
+    });
+
+    // Load all tasks from API
+    async function loadTasks() {
+      try {
+        const response = await fetch('/api/tasks');
+        const tasks = await response.json();
+        renderTasks(tasks);
+        hideError();
+      } catch (error) {
+        showError('Failed to load tasks');
+      }
+    }
+
+    // Render tasks to the DOM
+    function renderTasks(tasks) {
+      if (tasks.length === 0) {
+        taskList.innerHTML = '<li class="empty-message">No tasks yet. Add one above!</li>';
+        return;
+      }
+
+      taskList.innerHTML = tasks.map(task => `
+        <li class="task-item" data-id="${task.id}">
+          <span class="task-title">${escapeHtml(task.title)}</span>
+          <button class="delete-btn" onclick="deleteTask(${task.id})">Delete</button>
+        </li>
+      `).join('');
+    }
+
+    // Delete a task
+    async function deleteTask(id) {
+      try {
+        const response = await fetch(`/api/tasks/${id}`, {
+          method: 'DELETE'
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to delete task');
+        }
+
+        hideError();
+        await loadTasks();
+      } catch (error) {
+        showError(error.message);
+      }
+    }
+
+    // Show error message
+    function showError(message) {
+      errorMessage.textContent = message;
+      errorMessage.style.display = 'block';
+    }
+
+    // Hide error message
+    function hideError() {
+      errorMessage.style.display = 'none';
+    }
+
+    // Escape HTML to prevent XSS
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>
