@@ -31,11 +31,25 @@ app.post('/api/tasks', (req, res) => {
     id: nextId++,
     title: title.trim(),
     dueDate: dueDate || null,
+    completed: false,
     createdAt: new Date().toISOString()
   };
   
   tasks.push(task);
   res.status(201).json(task);
+});
+
+// Toggle task completion
+app.patch('/api/tasks/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const task = tasks.find(task => task.id === id);
+  
+  if (!task) {
+    return res.status(404).json({ error: 'Task not found' });
+  }
+  
+  task.completed = !task.completed;
+  res.json(task);
 });
 
 // Delete a task

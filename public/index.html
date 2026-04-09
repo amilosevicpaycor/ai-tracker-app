@@ -127,6 +127,66 @@
       text-align: center;
       margin-bottom: 20px;
     }
+
+    .filter-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      justify-content: center;
+    }
+
+    .filter-btn {
+      padding: 8px 20px;
+      font-size: 14px;
+      background-color: #e9ecef;
+      color: #495057;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .filter-btn:hover {
+      background-color: #dee2e6;
+    }
+
+    .filter-btn.active {
+      background-color: #007bff;
+      color: white;
+    }
+
+    .task-item.completed .task-title {
+      text-decoration: line-through;
+      color: #999;
+    }
+
+    .task-item .task-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .task-item .complete-btn {
+      padding: 8px 16px;
+      font-size: 14px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .task-item .complete-btn:hover {
+      background-color: #218838;
+    }
+
+    .task-item.completed .complete-btn {
+      background-color: #6c757d;
+    }
+
+    .task-item.completed .complete-btn:hover {
+      background-color: #5a6268;
+    }
   </style>
 </head>
 <body>
@@ -141,6 +201,12 @@
 
     <div id="errorMessage" class="error-message" style="display: none;"></div>
 
+    <div class="filter-buttons">
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="active">Active</button>
+      <button class="filter-btn" data-filter="completed">Completed</button>
+    </div>
+
     <ul class="task-list" id="taskList">
       <li class="empty-message">Loading tasks...</li>
     </ul>
@@ -152,9 +218,23 @@
     const taskList = document.getElementById('taskList');
     const addTaskForm = document.getElementById('addTaskForm');
     const errorMessage = document.getElementById('errorMessage');
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    
+    let allTasks = [];
+    let currentFilter = 'all';
 
     // Load tasks on page load
     document.addEventListener('DOMContentLoaded', loadTasks);
+
+    // Filter button clicks
+    filterButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        renderTasks(filterTasks(allTasks));
+      });
+    });
 
     // Add task form submission
     addTaskForm.addEventListener('submit', async (e) => {
@@ -190,11 +270,23 @@
     async function loadTasks() {
       try {
         const response = await fetch('/api/tasks');
-        const tasks = await response.json();
-        renderTasks(tasks);
+        allTasks = await response.json();
+        renderTasks(filterTasks(allTasks));
         hideError();
       } catch (error) {
         showError('Failed to load tasks');
+      }
+    }
+
+    // Filter tasks based on current filter
+    function filterTasks(tasks) {
+      switch (currentFilter) {
+        case 'active':
+          return tasks.filter(task => !task.completed);
+        case 'completed':
+          return tasks.filter(task => task.completed);
+        default:
+          return tasks;
       }
     }
 
@@ -206,14 +298,35 @@
       }
 
       taskList.innerHTML = tasks.map(task => `
-        <li class="task-item" data-id="${task.id}">
+        <li class="task-item ${task.completed ? 'completed' : ''}" data-id="${task.id}">
           <div class="task-info">
             <div class="task-title">${escapeHtml(task.title)}</div>
-            ${task.dueDate ? `<div class="task-due-date ${isOverdue(task.dueDate) ? 'overdue' : ''}">Due: ${formatDate(task.dueDate)}</div>` : ''}
+            ${task.dueDate ? `<div class="task-due-date ${isOverdue(task.dueDate) && !task.completed ? 'overdue' : ''}">Due: ${formatDate(task.dueDate)}</div>` : ''}
           </div>
-          <button class="delete-btn" onclick="deleteTask(${task.id})">Delete</button>
+          <div class="task-actions">
+            <button class="complete-btn" onclick="toggleComplete(${task.id})">${task.completed ? 'Undo' : 'Complete'}</button>
+            <button class="delete-btn" onclick="deleteTask(${task.id})">Delete</button>
+          </div>
         </li>
       `).join('');
+    }
+
+    // Toggle task completion
+    async function toggleComplete(id) {
+      try {
+        const response = await fetch(`/api/tasks/${id}`, {
+          method: 'PATCH'
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update task');
+        }
+
+        hideError();
+        await loadTasks();
+      } catch (error) {
+        showError(error.message);
+      }
     }
 
     // Delete a task
