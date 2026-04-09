@@ -187,6 +187,24 @@
     .task-item.completed .complete-btn:hover {
       background-color: #5a6268;
     }
+
+    .search-bar {
+      margin-bottom: 20px;
+    }
+
+    .search-bar input {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 16px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-bar input:focus {
+      border-color: #007bff;
+    }
   </style>
 </head>
 <body>
@@ -207,6 +225,10 @@
       <button class="filter-btn" data-filter="completed">Completed</button>
     </div>
 
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Search tasks...">
+    </div>
+
     <ul class="task-list" id="taskList">
       <li class="empty-message">Loading tasks...</li>
     </ul>
@@ -219,9 +241,11 @@
     const addTaskForm = document.getElementById('addTaskForm');
     const errorMessage = document.getElementById('errorMessage');
     const filterButtons = document.querySelectorAll('.filter-btn');
+    const searchInput = document.getElementById('searchInput');
     
     let allTasks = [];
     let currentFilter = 'all';
+    let searchTerm = '';
 
     // Load tasks on page load
     document.addEventListener('DOMContentLoaded', loadTasks);
@@ -234,6 +258,12 @@
         currentFilter = btn.dataset.filter;
         renderTasks(filterTasks(allTasks));
       });
+    });
+
+    // Search input handler
+    searchInput.addEventListener('input', (e) => {
+      searchTerm = e.target.value.toLowerCase();
+      renderTasks(filterTasks(allTasks));
     });
 
     // Add task form submission
@@ -278,22 +308,35 @@
       }
     }
 
-    // Filter tasks based on current filter
+    // Filter tasks based on current filter and search term
     function filterTasks(tasks) {
+      let filtered = tasks;
+      
+      // Apply search filter
+      if (searchTerm) {
+        filtered = filtered.filter(task => 
+          task.title.toLowerCase().includes(searchTerm)
+        );
+      }
+      
+      // Apply status filter
       switch (currentFilter) {
         case 'active':
-          return tasks.filter(task => !task.completed);
+          return filtered.filter(task => !task.completed);
         case 'completed':
-          return tasks.filter(task => task.completed);
+          return filtered.filter(task => task.completed);
         default:
-          return tasks;
+          return filtered;
       }
     }
 
     // Render tasks to the DOM
     function renderTasks(tasks) {
       if (tasks.length === 0) {
-        taskList.innerHTML = '<li class="empty-message">No tasks yet. Add one above!</li>';
+        const message = searchTerm || currentFilter !== 'all' 
+          ? 'No matching tasks found.' 
+          : 'No tasks yet. Add one above!';
+        taskList.innerHTML = `<li class="empty-message">${message}</li>`;
         return;
       }
 
