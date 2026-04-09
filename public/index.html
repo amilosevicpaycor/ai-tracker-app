@@ -31,12 +31,14 @@
 
     .add-task-form {
       display: flex;
+      flex-wrap: wrap;
       gap: 10px;
       margin-bottom: 30px;
     }
 
-    .add-task-form input {
+    .add-task-form input[type="text"] {
       flex: 1;
+      min-width: 200px;
       padding: 12px 16px;
       font-size: 16px;
       border: 2px solid #ddd;
@@ -45,7 +47,28 @@
       transition: border-color 0.2s;
     }
 
-    .add-task-form input:focus {
+    .add-task-form input[type="date"] {
+      padding: 12px 16px;
+      font-size: 16px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .add-task-form select {
+      padding: 12px 16px;
+      font-size: 16px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      outline: none;
+      background-color: white;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .add-task-form input:focus,
+    .add-task-form select:focus {
       border-color: #007bff;
     }
 
@@ -97,6 +120,31 @@
     .task-item .task-due-date.overdue {
       color: #dc3545;
       font-weight: 500;
+    }
+
+    .task-item .task-category {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      border-radius: 12px;
+      margin-top: 6px;
+    }
+
+    .task-category.work {
+      background-color: #cce5ff;
+      color: #004085;
+    }
+
+    .task-category.personal {
+      background-color: #d4edda;
+      color: #155724;
+    }
+
+    .task-category.urgent {
+      background-color: #f8d7da;
+      color: #721c24;
     }
 
     .task-item .delete-btn {
@@ -214,6 +262,11 @@
     <form class="add-task-form" id="addTaskForm">
       <input type="text" id="taskInput" placeholder="Enter a new task..." required>
       <input type="date" id="dueDateInput" title="Due Date">
+      <select id="categoryInput" title="Category">
+        <option value="Personal">Personal</option>
+        <option value="Work">Work</option>
+        <option value="Urgent">Urgent</option>
+      </select>
       <button type="submit">Add Task</button>
     </form>
 
@@ -237,6 +290,7 @@
   <script>
     const taskInput = document.getElementById('taskInput');
     const dueDateInput = document.getElementById('dueDateInput');
+    const categoryInput = document.getElementById('categoryInput');
     const taskList = document.getElementById('taskList');
     const addTaskForm = document.getElementById('addTaskForm');
     const errorMessage = document.getElementById('errorMessage');
@@ -271,6 +325,7 @@
       e.preventDefault();
       const title = taskInput.value.trim();
       const dueDate = dueDateInput.value || null;
+      const category = categoryInput.value;
       
       if (!title) return;
 
@@ -280,7 +335,7 @@
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ title, dueDate })
+          body: JSON.stringify({ title, dueDate, category })
         });
 
         if (!response.ok) {
@@ -289,6 +344,7 @@
 
         taskInput.value = '';
         dueDateInput.value = '';
+        categoryInput.value = 'Personal';
         hideError();
         await loadTasks();
       } catch (error) {
@@ -345,6 +401,7 @@
           <div class="task-info">
             <div class="task-title">${escapeHtml(task.title)}</div>
             ${task.dueDate ? `<div class="task-due-date ${isOverdue(task.dueDate) && !task.completed ? 'overdue' : ''}">Due: ${formatDate(task.dueDate)}</div>` : ''}
+            <span class="task-category ${task.category ? task.category.toLowerCase() : 'personal'}">${task.category || 'Personal'}</span>
           </div>
           <div class="task-actions">
             <button class="complete-btn" onclick="toggleComplete(${task.id})">${task.completed ? 'Undo' : 'Complete'}</button>
