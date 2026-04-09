@@ -21,7 +21,7 @@ app.get('/api/tasks', (req, res) => {
 
 // Add a new task
 app.post('/api/tasks', (req, res) => {
-  const { title } = req.body;
+  const { title, dueDate } = req.body;
   
   if (!title || title.trim() === '') {
     return res.status(400).json({ error: 'Task title is required' });
@@ -30,6 +30,7 @@ app.post('/api/tasks', (req, res) => {
   const task = {
     id: nextId++,
     title: title.trim(),
+    dueDate: dueDate || null,
     createdAt: new Date().toISOString()
   };
   

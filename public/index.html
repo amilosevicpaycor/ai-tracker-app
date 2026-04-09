@@ -79,10 +79,24 @@
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
-    .task-item .task-title {
+    .task-item .task-info {
       flex: 1;
+    }
+
+    .task-item .task-title {
       font-size: 16px;
       color: #333;
+    }
+
+    .task-item .task-due-date {
+      font-size: 13px;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .task-item .task-due-date.overdue {
+      color: #dc3545;
+      font-weight: 500;
     }
 
     .task-item .delete-btn {
@@ -121,6 +135,7 @@
     
     <form class="add-task-form" id="addTaskForm">
       <input type="text" id="taskInput" placeholder="Enter a new task..." required>
+      <input type="date" id="dueDateInput" title="Due Date">
       <button type="submit">Add Task</button>
     </form>
 
@@ -133,6 +148,7 @@
 
   <script>
     const taskInput = document.getElementById('taskInput');
+    const dueDateInput = document.getElementById('dueDateInput');
     const taskList = document.getElementById('taskList');
     const addTaskForm = document.getElementById('addTaskForm');
     const errorMessage = document.getElementById('errorMessage');
@@ -144,6 +160,7 @@
     addTaskForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const title = taskInput.value.trim();
+      const dueDate = dueDateInput.value || null;
       
       if (!title) return;
 
@@ -153,7 +170,7 @@
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ title })
+          body: JSON.stringify({ title, dueDate })
         });
 
         if (!response.ok) {
@@ -161,6 +178,7 @@
         }
 
         taskInput.value = '';
+        dueDateInput.value = '';
         hideError();
         await loadTasks();
       } catch (error) {
@@ -189,7 +207,10 @@
 
       taskList.innerHTML = tasks.map(task => `
         <li class="task-item" data-id="${task.id}">
-          <span class="task-title">${escapeHtml(task.title)}</span>
+          <div class="task-info">
+            <div class="task-title">${escapeHtml(task.title)}</div>
+            ${task.dueDate ? `<div class="task-due-date ${isOverdue(task.dueDate) ? 'overdue' : ''}">Due: ${formatDate(task.dueDate)}</div>` : ''}
+          </div>
           <button class="delete-btn" onclick="deleteTask(${task.id})">Delete</button>
         </li>
       `).join('');
@@ -229,6 +250,20 @@
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
+    }
+
+    // Format date for display
+    function formatDate(dateString) {
+      const date = new Date(dateString + 'T00:00:00');
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    // Check if date is overdue
+    function isOverdue(dateString) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const dueDate = new Date(dateString + 'T00:00:00');
+      return dueDate < today;
     }
   </script>
 </body>
