@@ -1,12 +1,13 @@
-# Sample Tracker App
+# AI Tracker App
 
-A simple task tracker application built with Node.js and Express that allows users to add, view, and delete tasks.
+A task tracker application built with React and Express.
 
 ## Features
 
-- Add new tasks
-- View all tasks
+- Add tasks with title, due date, and category
+- Mark tasks as complete/incomplete
 - Delete tasks
+- Categories: Personal, Work, Shopping, Health
 - Clean, responsive UI
 - RESTful API
 
@@ -17,7 +18,7 @@ A simple task tracker application built with Node.js and Express that allows use
 
 ## Setup Instructions
 
-1. **Clone or navigate to the project directory**
+1. **Navigate to the project directory**
 
    ```bash
    cd ai-tracker-app
@@ -29,23 +30,24 @@ A simple task tracker application built with Node.js and Express that allows use
    npm install
    ```
 
-3. **Start the application**
+3. **Start in development mode**
 
    ```bash
-   npm start
+   npm run dev
    ```
+
+   This starts both the React dev server (port 3000) and Express API (port 3001).
 
 4. **Open in browser**
 
    Navigate to [http://localhost:3000](http://localhost:3000)
 
-## Development
+## Available Scripts
 
-To run the app in development mode with auto-restart on file changes:
-
-```bash
-npm run dev
-```
+- `npm start` - Run React development server
+- `npm run server` - Run Express API server only
+- `npm run dev` - Run both servers concurrently
+- `npm run build` - Build React for production
 
 ## API Endpoints
 

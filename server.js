@@ -2,7 +2,7 @@ const express = require('express');
 const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 // In-memory task storage
 let tasks = [];
@@ -10,7 +10,11 @@ let nextId = 1;
 
 // Middleware
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+
+// Serve static files from React build in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, 'build')));
+}
 
 // API Routes
 
@@ -22,11 +26,11 @@ app.get('/api/tasks', (req, res) => {
 // Add a new task
 app.post('/api/tasks', (req, res) => {
   const { title, dueDate, category } = req.body;
-  
+
   if (!title || title.trim() === '') {
     return res.status(400).json({ error: 'Task title is required' });
   }
-  
+
   const task = {
     id: nextId++,
     title: title.trim(),
@@ -35,7 +39,7 @@ app.post('/api/tasks', (req, res) => {
     completed: false,
     createdAt: new Date().toISOString()
   };
-  
+
   tasks.push(task);
   res.status(201).json(task);
 });
@@ -44,11 +48,11 @@ app.post('/api/tasks', (req, res) => {
 app.patch('/api/tasks/:id', (req, res) => {
   const id = parseInt(req.params.id);
   const task = tasks.find(task => task.id === id);
-  
+
   if (!task) {
     return res.status(404).json({ error: 'Task not found' });
   }
-  
+
   task.completed = !task.completed;
   res.json(task);
 });
@@ -57,21 +61,23 @@ app.patch('/api/tasks/:id', (req, res) => {
 app.delete('/api/tasks/:id', (req, res) => {
   const id = parseInt(req.params.id);
   const taskIndex = tasks.findIndex(task => task.id === id);
-  
+
   if (taskIndex === -1) {
     return res.status(404).json({ error: 'Task not found' });
   }
-  
+
   tasks.splice(taskIndex, 1);
   res.status(204).send();
 });
 
-// Serve the main page
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+// Serve React app in production
+if (process.env.NODE_ENV === 'production') {
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'build', 'index.html'));
+  });
+}
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`Sample Tracker App running at http://localhost:${PORT}`);
+  console.log(`API server running at http://localhost:${PORT}`);
 });
